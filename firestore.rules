@@ -1,0 +1,223 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Safety Net: Default-deny all unspecified documents
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Hardened Primitive Helpers
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Primary owner verification by verified client administrator email
+    function isPrimaryAdmin() {
+      return isSignedIn()
+        && request.auth.token.email != null
+        && (request.auth.token.email == 'nasirkhanprinting@gmail.com' || request.auth.token.email.lower() == 'nasirkhanprinting@gmail.com')
+        && request.auth.token.email_verified == true;
+    }
+
+    // Check if an existing admin record is explicitly approved with administrator role and matching verified email
+    function hasApprovedAdminRole() {
+      return isSignedIn()
+        && request.auth.token.email != null
+        && request.auth.token.email_verified == true
+        && exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+        && get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.role == 'administrator'
+        && (
+          get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.email == request.auth.token.email ||
+          get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.email.lower() == request.auth.token.email.lower()
+        );
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        isPrimaryAdmin() ||
+        hasApprovedAdminRole()
+      );
+    }
+
+    // Entity Validation Helpers
+    function isValidProduct(data) {
+      return data.name is string && data.name.size() > 0 && data.name.size() <= 200
+        && data.slug is string && data.slug.size() > 0 && data.slug.size() <= 200
+        && data.categoryId is string && data.categoryId.size() <= 100
+        && (!('subcategoryId' in data) || data.subcategoryId == null || (data.subcategoryId is string && data.subcategoryId.size() <= 128))
+        && (!('subcategoryName' in data) || data.subcategoryName == null || (data.subcategoryName is string && data.subcategoryName.size() <= 150))
+        && (!('id' in data) || (data.id is string && data.id.size() <= 128))
+        && (!('categoryName' in data) || (data.categoryName is string && data.categoryName.size() <= 150))
+        && (!('shortDescription' in data) || (data.shortDescription is string && data.shortDescription.size() <= 1000))
+        && (!('description' in data) || (data.description is string && data.description.size() <= 10000))
+        && (!('imageUrl' in data) || (data.imageUrl is string && data.imageUrl.size() <= 2000))
+        && (!('gallery' in data) || data.gallery is list)
+        && (!('availableDimensions' in data) || data.availableDimensions is list)
+        && (!('materialOptions' in data) || data.materialOptions is list)
+        && (!('printingOptions' in data) || data.printingOptions is list)
+        && (!('finishingOptions' in data) || data.finishingOptions is list)
+        && (!('minOrderQuantity' in data) || (data.minOrderQuantity is string && data.minOrderQuantity.size() <= 150))
+        && (!('pricingMode' in data) || (data.pricingMode is string && (data.pricingMode in ['quote_only', 'indicative'])))
+        && (!('indicativePrice' in data) || (data.indicativePrice is string && data.indicativePrice.size() <= 100))
+        && (!('isFeatured' in data) || data.isFeatured is bool)
+        && (!('seoTitle' in data) || (data.seoTitle is string && data.seoTitle.size() <= 200))
+        && (!('seoDescription' in data) || (data.seoDescription is string && data.seoDescription.size() <= 500))
+        && (!('createdAt' in data) || (data.createdAt is string && data.createdAt.size() <= 100))
+        && (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 100))
+        && (!('isDeleted' in data) || data.isDeleted is bool)
+        && data.isPublished is bool;
+    }
+
+    function isValidCategory(data) {
+      return data.name is string && data.name.size() > 0 && data.name.size() <= 150
+        && data.slug is string && data.slug.size() > 0 && data.slug.size() <= 150
+        && (!('parentCategoryId' in data) || data.parentCategoryId == null || (data.parentCategoryId is string && data.parentCategoryId.size() <= 128))
+        && (!('id' in data) || (data.id is string && data.id.size() <= 128))
+        && (!('description' in data) || (data.description is string && data.description.size() <= 2000))
+        && (!('imageUrl' in data) || (data.imageUrl is string && data.imageUrl.size() <= 2000))
+        && data.displayOrder is number
+        && data.isPublished is bool
+        && (!('createdAt' in data) || (data.createdAt is string && data.createdAt.size() <= 100))
+        && (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 100))
+        && (!('isDeleted' in data) || data.isDeleted is bool);
+    }
+
+    // Base validation for inquiry structure
+    function isValidInquiry(data) {
+      return data.customerName is string && data.customerName.size() > 0 && data.customerName.size() <= 120
+        && data.phone is string && data.phone.size() > 0 && data.phone.size() <= 40
+        && data.city is string && data.city.size() > 0 && data.city.size() <= 80
+        && data.category is string && data.category.size() <= 120
+        && data.quantity is string && data.quantity.size() <= 80
+        && data.description is string && data.description.size() <= 3000
+        && data.status is string && (data.status in ['New', 'Contacted', 'Quoted', 'Quotation Sent', 'In Discussion', 'Confirmed', 'In Production', 'Dispatched', 'Completed', 'Cancelled', 'Closed'])
+        && (!('id' in data) || (data.id is string && data.id.size() <= 128))
+        && (!('businessName' in data) || (data.businessName is string && data.businessName.size() <= 150))
+        && (!('email' in data) || (data.email is string && data.email.size() <= 150))
+        && (!('dimensions' in data) || (data.dimensions is string && data.dimensions.size() <= 100))
+        && (!('material' in data) || (data.material is string && data.material.size() <= 100))
+        && (!('printing' in data) || (data.printing is string && data.printing.size() <= 100))
+        && (!('finishing' in data) || (data.finishing is string && data.finishing.size() <= 100))
+        && (!('budget' in data) || (data.budget is string && data.budget.size() <= 100))
+        && (!('deadline' in data) || (data.deadline is string && data.deadline.size() <= 100))
+        && (!('quotedPrice' in data) || (data.quotedPrice is string && data.quotedPrice.size() <= 100))
+        && (!('attachmentUrl' in data) || (data.attachmentUrl is string && data.attachmentUrl.size() <= 2000))
+        && (!('createdAt' in data) || (data.createdAt is string && data.createdAt.size() <= 100))
+        && (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 100))
+        && (!('internalNotes' in data) || (data.internalNotes is string && data.internalNotes.size() <= 5000));
+    }
+
+    // Strict validation for public submissions: forces status to 'New' and forbids internalNotes
+    function isValidNewPublicInquiry(data) {
+      return isValidInquiry(data)
+        && data.status == 'New'
+        && !('internalNotes' in data);
+    }
+
+    function isValidPortfolio(data) {
+      return data.title is string && data.title.size() > 0 && data.title.size() <= 200
+        && data.category is string && data.category.size() <= 150
+        && (!('id' in data) || (data.id is string && data.id.size() <= 128))
+        && (!('description' in data) || (data.description is string && data.description.size() <= 2000))
+        && (!('imageUrl' in data) || (data.imageUrl is string && data.imageUrl.size() <= 2000))
+        && (!('clientName' in data) || (data.clientName is string && data.clientName.size() <= 200))
+        && data.displayOrder is number
+        && data.isPublished is bool
+        && (!('createdAt' in data) || (data.createdAt is string && data.createdAt.size() <= 100))
+        && (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 100));
+    }
+
+    function isValidSiteSettings(data) {
+      return data.businessName is string && data.businessName.size() > 0 && data.businessName.size() <= 200
+        && data.whatsappNumber is string && data.whatsappNumber.size() > 0 && data.whatsappNumber.size() <= 50
+        && (!('secondaryWhatsAppNumber' in data) || (data.secondaryWhatsAppNumber is string && data.secondaryWhatsAppNumber.size() <= 50))
+        && (!('phoneNumber' in data) || (data.phoneNumber is string && data.phoneNumber.size() <= 100))
+        && (!('email' in data) || (data.email is string && data.email.size() <= 150))
+        && (!('city' in data) || (data.city is string && data.city.size() <= 150))
+        && (!('address' in data) || (data.address is string && data.address.size() <= 500))
+        && (!('businessDescription' in data) || (data.businessDescription is string && data.businessDescription.size() <= 3000))
+        && (!('logoUrl' in data) || (data.logoUrl is string && data.logoUrl.size() <= 2000))
+        && (!('announcementText' in data) || (data.announcementText is string && data.announcementText.size() <= 500))
+        && (!('announcementEnabled' in data) || data.announcementEnabled is bool)
+        && (!('socialInstagram' in data) || (data.socialInstagram is string && data.socialInstagram.size() <= 500))
+        && (!('socialFacebook' in data) || (data.socialFacebook is string && data.socialFacebook.size() <= 500))
+        && (!('socialLinkedin' in data) || (data.socialLinkedin is string && data.socialLinkedin.size() <= 500))
+        && (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 100));
+    }
+
+    function isValidAdmin(data) {
+      return data.email is string && data.email.size() > 0 && data.email.size() <= 150
+        && data.role is string && data.role == 'administrator'
+        && (!('id' in data) || (data.id is string && data.id.size() <= 128))
+        && (!('createdAt' in data) || (data.createdAt is string && data.createdAt.size() <= 100));
+    }
+
+    // 1. Products Collection: Public visitors can view published items. Admins manage all items.
+    match /products/{productId} {
+      allow get: if isValidId(productId) && (resource.data.isPublished == true || isAdmin());
+      allow list: if isAdmin() || resource.data.isPublished == true;
+      allow create: if isValidId(productId) && isAdmin() && isValidProduct(incoming());
+      allow update: if isValidId(productId) && isAdmin() && isValidProduct(incoming());
+      allow delete: if isValidId(productId) && isAdmin();
+    }
+
+    // 2. Categories Collection: Public visitors can view published categories. Admins manage all.
+    match /categories/{categoryId} {
+      allow get: if isValidId(categoryId) && (resource.data.isPublished == true || isAdmin());
+      allow list: if isAdmin() || resource.data.isPublished == true;
+      allow create: if isValidId(categoryId) && isAdmin() && isValidCategory(incoming());
+      allow update: if isValidId(categoryId) && isAdmin() && isValidCategory(incoming());
+      allow delete: if isValidId(categoryId) && isAdmin();
+    }
+
+    // 3. Portfolio Collection: Public view for published works. Admins manage.
+    match /portfolio/{portfolioId} {
+      allow get: if isValidId(portfolioId) && (resource.data.isPublished == true || isAdmin());
+      allow list: if isAdmin() || resource.data.isPublished == true;
+      allow create: if isValidId(portfolioId) && isAdmin() && isValidPortfolio(incoming());
+      allow update: if isValidId(portfolioId) && isAdmin() && isValidPortfolio(incoming());
+      allow delete: if isValidId(portfolioId) && isAdmin();
+    }
+
+    // 4. Site Settings Collection: Public read restricted to intended 'default' document; admin write.
+    match /siteSettings/{settingId} {
+      allow get: if isValidId(settingId) && (settingId == 'default' || isAdmin());
+      allow list: if isAdmin();
+      allow create, update: if isValidId(settingId) && isAdmin() && isValidSiteSettings(incoming());
+      allow delete: if isValidId(settingId) && isAdmin();
+    }
+
+    // 5. Inquiries Collection: Public users can CREATE valid inquiries with status 'New' and NO internalNotes.
+    // ONLY Admins can READ, LIST, UPDATE, or DELETE, or set internalNotes.
+    match /inquiries/{inquiryId} {
+      allow create: if isValidId(inquiryId) && (isValidNewPublicInquiry(incoming()) || (isAdmin() && isValidInquiry(incoming())));
+      allow get, list, update, delete: if isValidId(inquiryId) && isAdmin();
+    }
+
+    // 6. Admins Collection: Used for RBAC verification.
+    match /admins/{adminId} {
+      // Authenticated users can only read their own document to verify admin status; admins can list and read all.
+      allow get: if isSignedIn() && (request.auth.uid == adminId || isAdmin());
+      allow list: if isAdmin();
+
+      // Strict Privilege Escalation Protection:
+      // Only the verified primary owner can create, update, or delete admin documents.
+      // Normal authenticated users and non-primary admins CANNOT modify admins/{adminId} records.
+      allow create, update: if isValidId(adminId) && isPrimaryAdmin() && isValidAdmin(incoming());
+      allow delete: if isValidId(adminId) && isPrimaryAdmin();
+    }
+  }
+}

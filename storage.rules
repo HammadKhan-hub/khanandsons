@@ -1,0 +1,30 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Helper function to check if the requester is the authorized owner or verified admin
+    function isAdmin() {
+      return request.auth != null
+        && request.auth.token.email != null
+        && (
+          request.auth.token.email.lower() == 'nasirkhanprinting@gmail.com'
+          || (firestore.exists(/databases/(default)/documents/admins/$(request.auth.uid))
+              && firestore.get(/databases/(default)/documents/admins/$(request.auth.uid)).data.role == 'administrator')
+        );
+    }
+
+    // Public read for uploaded product and category mockup images
+    // Only authorized administrators can upload, replace, or delete files
+    match /uploads/{allPaths=**} {
+      allow read: if true;
+      allow create, update: if isAdmin()
+        && request.resource.size <= 10 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+      allow delete: if isAdmin();
+    }
+
+    // Default deny for all other paths
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

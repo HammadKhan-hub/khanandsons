@@ -1,0 +1,380 @@
+{
+  "entities": {
+    "Product": {
+      "title": "Product",
+      "description": "Packaging and printing product item available for showcase and WhatsApp ordering.",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The title or name of the packaging product.",
+          "maxLength": 150
+        },
+        "slug": {
+          "type": "string",
+          "description": "URL-safe unique identifier slug.",
+          "maxLength": 150
+        },
+        "categoryId": {
+          "type": "string",
+          "description": "Identifier of the parent category.",
+          "maxLength": 100
+        },
+        "categoryName": {
+          "type": "string",
+          "description": "Display name of the category.",
+          "maxLength": 100
+        },
+        "shortDescription": {
+          "type": "string",
+          "description": "Short summary displayed on cards.",
+          "maxLength": 300
+        },
+        "description": {
+          "type": "string",
+          "description": "Full product description and specifications overview.",
+          "maxLength": 5000
+        },
+        "imageUrl": {
+          "type": "string",
+          "description": "Primary product image URL.",
+          "maxLength": 1000
+        },
+        "gallery": {
+          "type": "array",
+          "description": "Additional gallery image URLs."
+        },
+        "availableDimensions": {
+          "type": "array",
+          "description": "List of typical or sample dimensions."
+        },
+        "materialOptions": {
+          "type": "array",
+          "description": "Paperboard, Kraft, Corrugated, Bleached, etc."
+        },
+        "printingOptions": {
+          "type": "array",
+          "description": "CMYK Offset, Pantone, Digital, Screen, etc."
+        },
+        "finishingOptions": {
+          "type": "array",
+          "description": "Matte lamination, Gloss, Gold foil, Embossing, UV spot, etc."
+        },
+        "minOrderQuantity": {
+          "type": "string",
+          "description": "Indicative MOQ or 'Custom on Request'.",
+          "maxLength": 100
+        },
+        "pricingMode": {
+          "type": "string",
+          "description": "Quote only ('quote_only') or Indicative ('indicative').",
+          "enum": ["quote_only", "indicative"]
+        },
+        "indicativePrice": {
+          "type": "string",
+          "description": "Optional indicative starting price in PKR.",
+          "maxLength": 100
+        },
+        "isFeatured": {
+          "type": "boolean",
+          "description": "Whether the product appears on the homepage featured section."
+        },
+        "isPublished": {
+          "type": "boolean",
+          "description": "Whether the product is visible to public storefront visitors."
+        },
+        "seoTitle": {
+          "type": "string",
+          "description": "SEO page title tag.",
+          "maxLength": 150
+        },
+        "seoDescription": {
+          "type": "string",
+          "description": "SEO meta description.",
+          "maxLength": 350
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "ISO timestamp or server timestamp string.",
+          "maxLength": 50
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "ISO timestamp or server timestamp string.",
+          "maxLength": 50
+        }
+      },
+      "required": ["name", "slug", "categoryId", "shortDescription", "imageUrl", "pricingMode", "isPublished"]
+    },
+    "Category": {
+      "title": "Category",
+      "description": "Packaging category grouping related products.",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Category display name.",
+          "maxLength": 100
+        },
+        "slug": {
+          "type": "string",
+          "description": "Category URL slug.",
+          "maxLength": 100
+        },
+        "description": {
+          "type": "string",
+          "description": "Category overview description.",
+          "maxLength": 1000
+        },
+        "imageUrl": {
+          "type": "string",
+          "description": "Cover image URL for category card.",
+          "maxLength": 1000
+        },
+        "displayOrder": {
+          "type": "number",
+          "description": "Sort order number for presentation."
+        },
+        "isPublished": {
+          "type": "boolean",
+          "description": "Whether category is active."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "ISO timestamp or server timestamp string.",
+          "maxLength": 50
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "ISO timestamp or server timestamp string.",
+          "maxLength": 50
+        }
+      },
+      "required": ["name", "slug", "description", "imageUrl", "displayOrder", "isPublished"]
+    },
+    "Inquiry": {
+      "title": "Inquiry",
+      "description": "Custom packaging or product inquiry submitted for quotation and follow-up.",
+      "type": "object",
+      "properties": {
+        "customerName": {
+          "type": "string",
+          "description": "Customer full name.",
+          "maxLength": 120
+        },
+        "businessName": {
+          "type": "string",
+          "description": "Company or brand name.",
+          "maxLength": 150
+        },
+        "phone": {
+          "type": "string",
+          "description": "Contact WhatsApp or mobile phone number.",
+          "maxLength": 40
+        },
+        "email": {
+          "type": "string",
+          "description": "Optional customer email address.",
+          "maxLength": 120
+        },
+        "city": {
+          "type": "string",
+          "description": "City in Pakistan or destination.",
+          "maxLength": 80
+        },
+        "category": {
+          "type": "string",
+          "description": "Packaging category or product requested.",
+          "maxLength": 120
+        },
+        "dimensions": {
+          "type": "string",
+          "description": "Length x Width x Height requirements.",
+          "maxLength": 120
+        },
+        "quantity": {
+          "type": "string",
+          "description": "Estimated units needed.",
+          "maxLength": 80
+        },
+        "material": {
+          "type": "string",
+          "description": "Material preference.",
+          "maxLength": 120
+        },
+        "printing": {
+          "type": "string",
+          "description": "Printing preference or colors.",
+          "maxLength": 120
+        },
+        "finishing": {
+          "type": "string",
+          "description": "Finishing effects like lamination or foil.",
+          "maxLength": 120
+        },
+        "budget": {
+          "type": "string",
+          "description": "Target budget range if provided.",
+          "maxLength": 100
+        },
+        "deadline": {
+          "type": "string",
+          "description": "Target delivery timeline or deadline.",
+          "maxLength": 100
+        },
+        "description": {
+          "type": "string",
+          "description": "Detailed project brief or instructions.",
+          "maxLength": 3000
+        },
+        "status": {
+          "type": "string",
+          "description": "Follow-up stage: New, Contacted, Quoted, In Discussion, Closed.",
+          "enum": ["New", "Contacted", "Quoted", "In Discussion", "Closed"]
+        },
+        "internalNotes": {
+          "type": "string",
+          "description": "Private admin notes regarding discussions and quotations.",
+          "maxLength": 3000
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "ISO timestamp or server timestamp string.",
+          "maxLength": 50
+        }
+      },
+      "required": ["customerName", "phone", "city", "category", "quantity", "description", "status"]
+    },
+    "PortfolioItem": {
+      "title": "PortfolioItem",
+      "description": "Showcase project example of custom packaging work.",
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "Project title or packaging name.",
+          "maxLength": 150
+        },
+        "category": {
+          "type": "string",
+          "description": "Industry or packaging type.",
+          "maxLength": 100
+        },
+        "description": {
+          "type": "string",
+          "description": "Brief project description, finishes, and specs.",
+          "maxLength": 1000
+        },
+        "imageUrl": {
+          "type": "string",
+          "description": "High resolution project image URL.",
+          "maxLength": 1000
+        },
+        "clientName": {
+          "type": "string",
+          "description": "Client industry or brand name, or sample mockup tag.",
+          "maxLength": 100
+        },
+        "displayOrder": {
+          "type": "number",
+          "description": "Ordering priority."
+        },
+        "isPublished": {
+          "type": "boolean",
+          "description": "Visibility in public portfolio."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Creation timestamp.",
+          "maxLength": 50
+        }
+      },
+      "required": ["title", "category", "imageUrl", "displayOrder", "isPublished"]
+    },
+    "SiteSettings": {
+      "title": "SiteSettings",
+      "description": "Global storefront configuration including WhatsApp number, location, and announcement bar.",
+      "type": "object",
+      "properties": {
+        "businessName": {
+          "type": "string",
+          "description": "Full business display name.",
+          "maxLength": 150
+        },
+        "whatsappNumber": {
+          "type": "string",
+          "description": "International format without '+' e.g. 923001234567.",
+          "maxLength": 30
+        },
+        "phoneNumber": {
+          "type": "string",
+          "description": "Display telephone or mobile number.",
+          "maxLength": 40
+        },
+        "email": {
+          "type": "string",
+          "description": "Business contact email.",
+          "maxLength": 120
+        },
+        "city": {
+          "type": "string",
+          "description": "Multan, Punjab, Pakistan by default.",
+          "maxLength": 100
+        },
+        "address": {
+          "type": "string",
+          "description": "Business location note.",
+          "maxLength": 300
+        },
+        "businessDescription": {
+          "type": "string",
+          "description": "Brand bio for footer and about page.",
+          "maxLength": 1000
+        },
+        "announcementText": {
+          "type": "string",
+          "description": "Top bar banner text.",
+          "maxLength": 250
+        },
+        "announcementEnabled": {
+          "type": "boolean",
+          "description": "Toggle visibility of top banner."
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Last update timestamp.",
+          "maxLength": 50
+        }
+      },
+      "required": ["businessName", "whatsappNumber", "city"]
+    }
+  },
+  "firestore": {
+    "/products/{productId}": {
+      "schema": "Product",
+      "description": "Storefront product items with specifications, images, and WhatsApp action details."
+    },
+    "/categories/{categoryId}": {
+      "schema": "Category",
+      "description": "Packaging product categories with cover images and descriptions."
+    },
+    "/inquiries/{inquiryId}": {
+      "schema": "Inquiry",
+      "description": "Optional saved customer inquiries for quotation and administrative tracking."
+    },
+    "/portfolio/{portfolioId}": {
+      "schema": "PortfolioItem",
+      "description": "Portfolio and showcase project gallery items."
+    },
+    "/siteSettings/{settingId}": {
+      "schema": "SiteSettings",
+      "description": "Global site settings such as WhatsApp number, announcement bar, and business information."
+    },
+    "/admins/{adminId}": {
+      "schema": {
+        "$ref": "#/entities/Admin"
+      },
+      "description": "List of authorized administrator user IDs."
+    }
+  }
+}
